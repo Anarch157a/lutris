@@ -1,6 +1,7 @@
 """Base module for runners"""
 # Standard Library
 import os
+from gettext import gettext as _
 
 # Third Party Libraries
 from gi.repository import Gtk
@@ -38,6 +39,7 @@ class Runner(metaclass=RunnerMeta):  # pylint: disable=too-many-public-methods
     context_menu_entries = []
     depends_on = None
     runner_executable = None
+    entry_point_option = "main_file"
 
     def __init__(self, config=None):
         """Initialize runner."""
@@ -93,20 +95,17 @@ class Runner(metaclass=RunnerMeta):  # pylint: disable=too-many-public-methods
         return self.system_config.get("game_path")
 
     @property
-    def browse_dir(self):
-        """Return the path to open with the Browse Files action."""
-        for key in self.game_config:
-            if key in ["exe", "main_file", "rom", "disk", "iso"]:
-                path = os.path.dirname(self.game_config.get(key) or "")
-                if not os.path.isabs(path):
-                    path = os.path.join(self.game_path, path)
-                return path
-        return self.game_path
-
-    @property
     def game_path(self):
         """Return the directory where the game is installed."""
-        return self.game_data.get("directory")
+        game_path = self.game_data.get("directory")
+        if game_path:
+            return game_path
+
+        # Default to the directory where the entry point is located.
+        entry_point = self.game_config.get(self.entry_point_option)
+        if entry_point:
+            return os.path.dirname(os.path.expanduser(entry_point))
+        return ""
 
     @property
     def working_dir(self):
@@ -148,7 +147,7 @@ class Runner(metaclass=RunnerMeta):  # pylint: disable=too-many-public-methods
                 {
                     "option": "runner_executable",
                     "type": "file",
-                    "label": "Custom executable for the runner",
+                    "label": _("Custom executable for the runner"),
                     "advanced": True,
                 }
             )
@@ -249,9 +248,9 @@ class Runner(metaclass=RunnerMeta):  # pylint: disable=too-many-public-methods
         """
         dialog = dialogs.QuestionDialog(
             {
-                "question": ("The required runner is not installed.\n"
-                             "Do you wish to install it now?"),
-                "title": "Required runner unavailable",
+                "question": _("The required runner is not installed.\n"
+                              "Do you wish to install it now?"),
+                "title": _("Required runner unavailable"),
             }
         )
         if Gtk.ResponseType.YES == dialog.result:

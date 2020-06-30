@@ -3,6 +3,7 @@
 import json
 import os
 import time
+from gettext import gettext as _
 from urllib.parse import parse_qsl, urlencode, urlparse
 
 # Lutris Modules
@@ -16,7 +17,7 @@ from lutris.util.http import HTTPError, Request
 from lutris.util.log import logger
 from lutris.util.resources import download_media
 
-NAME = "GOG"
+NAME = _("GOG")
 ICON = "gog"
 ONLINE = True
 
@@ -200,6 +201,8 @@ class GogService(OnlineService):
         try:
             response = self.make_api_request(downlink)
         except HTTPError:
+            raise UnavailableGame()
+        if not response:
             raise UnavailableGame()
         for field in ("checksum", "downlink"):
             field_url = response[field]
